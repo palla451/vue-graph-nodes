@@ -1,12 +1,15 @@
 <template>
   <div class="graph-container">
     <v-network-graph
-      ref="graphRef"
-      :nodes="nodes"
-      :edges="edges"
-      :layouts="layouts"
-      :configs="configs"
+        ref="graphRef"
+        :nodes="nodes"
+        :edges="edges"
+        :layouts="layouts"
+        :configs="configs"
     />
+    <div v-if="serverMessage" class="server-message">
+      {{ serverMessage }}
+    </div>
   </div>
 </template>
 
@@ -20,22 +23,24 @@ const nodes = ref({})
 const edges = ref({})
 const layouts = ref({ nodes: {} })
 
+const serverMessage = ref('') // 👈 messaggio del server
+
 const configs = reactive(
-  defineConfigs({
-    view: {
-      autoPanAndZoomOnLoad: 'center-content',
-      zoomInitial: 1,
-      zoomMax: 10,
-      zoomMin: 0.1,
-      panEnabled: true,
-      zoomEnabled: true
-    },
-    node: {
-      label: {
-        visible: true
+    defineConfigs({
+      view: {
+        autoPanAndZoomOnLoad: 'center-content',
+        zoomInitial: 1,
+        zoomMax: 10,
+        zoomMin: 0.1,
+        panEnabled: true,
+        zoomEnabled: true
+      },
+      node: {
+        label: {
+          visible: true
+        }
       }
-    }
-  })
+    })
 )
 
 onMounted(async () => {
@@ -68,6 +73,10 @@ onMounted(async () => {
     })
 
     const result = await response.json()
+
+    if (result.message) {
+      serverMessage.value = `⚠️ ${result.message}`
+    }
 
     const maxNodes = 100
     const limitedNodes = (result.nodes || []).slice(0, maxNodes)
@@ -117,7 +126,6 @@ onMounted(async () => {
       }
     }
 
-    // 🧩 Metodo compatibile con versioni precedenti
     setTimeout(() => {
       if (graphRef.value?.graph?.zoomFit) {
         graphRef.value.graph.zoomFit()
@@ -126,6 +134,7 @@ onMounted(async () => {
 
   } catch (error) {
     console.error('Errore nella fetch:', error)
+    serverMessage.value = '❌ Errore nella richiesta al server.'
   }
 })
 </script>
@@ -136,5 +145,21 @@ onMounted(async () => {
   height: 100vh;
   overflow: hidden;
   background-color: white;
+  position: relative;
+}
+
+.server-message {
+  position: fixed;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 1000;
 }
 </style>
