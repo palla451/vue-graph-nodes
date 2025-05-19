@@ -3,13 +3,10 @@
     <!-- Definizione gradienti per nodi -->
     <svg width="0" height="0">
       <defs>
-        <!-- Glow normale -->
         <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stop-color="#00ffcc" stop-opacity="1" />
           <stop offset="100%" stop-color="#003333" stop-opacity="0" />
         </radialGradient>
-
-        <!-- Glow nodo selezionato -->
         <radialGradient id="nodeSelectedGlow" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stop-color="#00ffff" stop-opacity="1" />
           <stop offset="100%" stop-color="#001111" stop-opacity="0" />
@@ -134,21 +131,36 @@ onMounted(async () => {
               {
                 range: {
                   '@timestamp': {
-                    gt: '2025-05-01T22:00:00.000Z',
-                    lt: '2025-05-12T21:59:59.999Z'
+                    gt: '2025-05-08T22:00:00.000Z',
+                    lt: '2025-05-19T21:59:59.999Z'
                   }
+                }
+              },
+              {
+                query_string: {
+                  query: 'source.domain:* OR destination.domain:*'
                 }
               }
             ],
             filter: [
-              { match: { 'observer.product.keyword': 'tca_node' } }
+              {
+                match: {
+                  'observer.product.keyword': 'tca_node'
+                }
+              }
             ],
             must_not: [
-              { match: { 'event.kind.keyword': 'alert' } }
+              {
+                match: {
+                  'event.kind.keyword': 'alert'
+                }
+              }
             ]
           }
         }
       })
+
+
     })
 
     const result = await response.json()
@@ -171,7 +183,7 @@ onMounted(async () => {
 
       rawPositions.push({
         id: node.ip,
-        name: node.ip,
+        label: node.hostname ?? node.ip, // hostname se esiste, altrimenti IP
         x: col * spacingX,
         y: row * spacingY
       })
@@ -188,7 +200,7 @@ onMounted(async () => {
     layouts.value.nodes = {}
 
     for (const pos of rawPositions) {
-      nodes.value[pos.id] = { name: pos.name }
+      nodes.value[pos.id] = { name: pos.label }
       layouts.value.nodes[pos.id] = {
         x: pos.x - centerX,
         y: pos.y - centerY
